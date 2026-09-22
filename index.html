@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lottery Ball Random Team Picker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body class="theme-cyan">
+  <div id="app" class="app-layout">
+    <!-- Top Bar Navigation -->
+    <header class="top-nav">
+      <div class="brand-group">
+        <div class="brand-badge">
+          <span class="live-dot"></span>
+          <span class="brand-text">LOTTO-PICKER 3D</span>
+        </div>
+        <span class="brand-subtext" id="machineStatusText">ONLINE &bull; READY</span>
+      </div>
+
+      <!-- Center Status Pill -->
+      <div class="center-status-capsule">
+        <i data-lucide="users"></i>
+        <span id="centerStatusCount">0 TEAMS IN MACHINE</span>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="nav-actions">
+        <button class="action-icon-btn" id="soundToggleBtn" aria-label="Toggle Sound" title="Toggle Sound (M)">
+          <i data-lucide="volume-2" id="soundIcon"></i>
+        </button>
+        <button class="action-icon-btn" id="winnersListBtn" aria-label="View Winners" title="Drawn Winners History">
+          <i data-lucide="trophy"></i>
+          <span class="badge" id="drawnCountBadge">0</span>
+        </button>
+        <button class="action-icon-btn" id="clearAllBtn" aria-label="Clear All Teams" title="Reset & Clear Machine">
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+        <button class="action-icon-btn" id="fullscreenBtn" aria-label="Toggle Fullscreen" title="Presentation Mode (F)">
+          <i data-lucide="maximize"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main 3D Canvas Stage -->
+    <main class="viewport-container" id="viewportContainer">
+      <div id="canvasMount" class="canvas-mount"></div>
+
+      <!-- Overhead Digital 7-segment display HUD -->
+      <div class="overhead-display-hud" id="overheadDisplayHud" aria-live="polite">
+        <div class="display-bezel">
+          <div class="display-header">
+            <span class="display-label">WINNING SELECTION</span>
+            <span class="status-indicator" id="agitateLedIndicator">READY</span>
+          </div>
+          <div class="segment-screen">
+            <span class="segment-number" id="digitalCounter">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left Side HUD: Active Teams in Drum -->
+      <div class="side-panel left-panel" id="teamsSidePanel">
+        <div class="glass-card panel-card">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i data-lucide="disc"></i>
+              <span>TEAMS IN MACHINE (<span id="teamListCount">0</span>)</span>
+            </div>
+          </div>
+          <div class="teams-scroll-list" id="activeTeamsList">
+            <div class="empty-teams-prompt" id="emptyTeamsPrompt">
+              <i data-lucide="inbox"></i>
+              <p>Machine is currently empty.<br>Type a team name below to drop a ball in!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side HUD: Drawn Winners Rack -->
+      <div class="side-panel right-panel" id="winnersSidePanel">
+        <div class="glass-card panel-card">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i data-lucide="award"></i>
+              <span>DRAWN WINNERS (<span id="winnersListCount">0</span>)</span>
+            </div>
+            <button class="text-link-btn" id="copyWinnersBtn" title="Copy winners list">Copy</button>
+          </div>
+          <div class="teams-scroll-list" id="drawnWinnersList">
+            <div class="empty-teams-prompt" id="emptyWinnersPrompt">
+              <i data-lucide="clock"></i>
+              <p>No teams drawn yet.<br>Click [DRAW WINNER] to pick.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Control Bar: Add Team & Draw -->
+      <div class="bottom-controls-bar">
+        <div class="controls-panel glass-panel">
+          <!-- Add Team Input Form -->
+          <form class="team-input-form" id="addTeamForm">
+            <div class="input-wrapper">
+              <i data-lucide="user-plus" class="input-icon"></i>
+              <input type="text" id="teamNameInput" class="team-input" placeholder="Type team name (e.g. A1, A2, B1)..." autocomplete="off" maxlength="30">
+            </div>
+            <button type="submit" class="deck-btn add-btn" id="addTeamBtn">
+              <i data-lucide="plus"></i>
+              <span>Add Ball</span>
+            </button>
+            <button type="button" class="deck-btn secondary-btn" id="openBulkAddBtn" title="Paste multiple teams at once">
+              <i data-lucide="list-plus"></i>
+              <span>Bulk Paste</span>
+            </button>
+          </form>
+
+          <div class="controls-divider"></div>
+
+          <!-- Agitate & Main Draw Action -->
+          <div class="draw-actions-group">
+            <button class="deck-btn secondary-btn" id="agitateToggleBtn" title="Toggle air blower vortex">
+              <i data-lucide="wind" id="agitateIcon"></i>
+              <span id="agitateBtnText">Mix</span>
+            </button>
+
+            <button class="deck-btn primary-draw-btn" id="drawBallBtn" title="Pick random team from machine (Spacebar)">
+              <span class="btn-glow"></span>
+              <div class="btn-inner">
+                <i data-lucide="play" class="draw-icon"></i>
+                <span class="draw-text">DRAW WINNER</span>
+              </div>
+              <span class="hotkey-tip">SPACE</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Winner Celebration Spotlight Modal Overlay (No Return Option) -->
+    <div class="winner-spotlight-overlay" id="winnerOverlay" hidden>
+      <div class="spotlight-backdrop"></div>
+      <div class="winner-card glass-modal">
+        <div class="winner-confetti-anchor" id="confettiAnchor"></div>
+        <div class="winner-badge-pill">
+          <i data-lucide="sparkles"></i>
+          <span id="winnerDrawRank">WINNER SELECTED</span>
+        </div>
+
+        <!-- Realistic Lottery Ball Showcase -->
+        <div class="winner-ball-showcase">
+          <div class="ball-glow-ring" id="winnerBallGlow"></div>
+          <div class="lotto-ball-graphic" id="winnerBallGraphic">
+            <div class="lotto-ball-ring" id="winnerBallRing">
+              <div class="lotto-ball-num" id="winnerBallNumber">A1</div>
+              <div class="lotto-ball-bar" id="winnerBallBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="winner-name-display" id="winnerNameDisplay">Team A1</div>
+        <div class="winner-detail-text" id="winnerDetailText">Removed from the machine</div>
+
+        <div class="winner-card-actions">
+          <button class="modal-btn primary-btn" id="winnerNextDrawBtn">
+            <i data-lucide="check"></i> Accept Winner / Next Draw
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Add Teams Dialog -->
+    <dialog class="app-dialog" id="bulkAddDialog" aria-labelledby="bulkAddDialogTitle">
+      <div class="dialog-frame">
+        <div class="dialog-header">
+          <h2 id="bulkAddDialogTitle" class="dialog-title">
+            <i data-lucide="list-plus"></i>
+            <span>Bulk Add Teams</span>
+          </h2>
+          <button class="close-dialog-btn" id="closeBulkAddBtn" aria-label="Close dialog">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="dialog-body">
+          <div class="form-group">
+            <label for="bulkNamesTextarea" class="form-label">Paste team names (one per line)</label>
+            <textarea id="bulkNamesTextarea" class="form-textarea" rows="8" placeholder="A1&#10;A2&#10;A3&#10;A4&#10;B1&#10;B2&#10;B3&#10;B4"></textarea>
+          </div>
+          <div class="sample-actions">
+            <button type="button" class="chip-btn" id="loadSampleTeamsBtn">Load Sample Teams (A1-A4, B1-B4, C1-C4)</button>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="modal-btn secondary-btn" id="cancelBulkAddBtn">Cancel</button>
+          <button class="modal-btn primary-btn" id="confirmBulkAddBtn">Add All to Machine</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Winners Full List Dialog (No Return Option) -->
+    <dialog class="app-dialog" id="winnersModalDialog" aria-labelledby="winnersModalTitle">
+      <div class="dialog-frame">
+        <div class="dialog-header">
+          <h2 id="winnersModalTitle" class="dialog-title">
+            <i data-lucide="trophy"></i>
+            <span>Drawn Winners History</span>
+          </h2>
+          <button class="close-dialog-btn" id="closeWinnersModalBtn" aria-label="Close">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="dialog-body">
+          <div class="history-table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Ball</th>
+                  <th>Team Name</th>
+                  <th>Time Drawn</th>
+                </tr>
+              </thead>
+              <tbody id="winnersTableBody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="dialog-footer between">
+          <button class="modal-btn danger-btn" id="clearWinnersOnlyBtn">Clear Winners History</button>
+          <button class="modal-btn secondary-btn" id="doneWinnersModalBtn">Done</button>
+        </div>
+      </div>
+    </dialog>
+
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
